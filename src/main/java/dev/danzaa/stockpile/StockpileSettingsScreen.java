@@ -42,7 +42,7 @@ public final class StockpileSettingsScreen extends Screen {
         link.active = minecraft.player != null;
         link.setTooltip(Tooltip.create(Component.literal("Send the dashboard link to chat. Join a world to use this action.")));
         addRenderableWidget(link);
-        addRenderableWidget(Button.builder(Component.literal("Open browser"), b -> owner.openBrowser())
+        addRenderableWidget(Button.builder(Component.literal("Open browser"), b -> owner.openDashboard())
                 .bounds(left + half + 8, top + 96, half, 20).build());
         addRenderableWidget(Button.builder(Component.literal("Done"), b -> onClose())
                 .bounds(left, height - 28, total, 20).build());

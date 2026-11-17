@@ -7,6 +7,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.ArrayDeque;
+import java.util.HashSet;
+import java.util.regex.Pattern;
 import org.slf4j.LoggerFactory;
 
 public final class BackendSmoke {
@@ -14,6 +17,23 @@ public final class BackendSmoke {
     static void check(boolean condition, String reason) {
         if (!condition) throw new AssertionError(reason);
         assertions++;
+    }
+    static void checkModules(HttpClient client, String origin) throws Exception {
+        var pending = new ArrayDeque<String>();
+        var visited = new HashSet<String>();
+        var imports = Pattern.compile("\\b(?:import|export)\\s+(?:[^;]*?\\s+from\\s+)?[\"'](\\./[^\"']+\\.js)[\"']");
+        pending.add("/app.js");
+        pending.add("/schematic-worker.js");
+        while (!pending.isEmpty()) {
+            String path = pending.remove();
+            if (!visited.add(path)) continue;
+            var response = client.send(HttpRequest.newBuilder(URI.create(origin + path)).GET().build(), HttpResponse.BodyHandlers.ofString());
+            check(response.statusCode() == 200, "Browser module is reachable: " + path);
+            check(response.headers().firstValue("Content-Type").orElse("").startsWith("text/javascript"), "Browser module has JavaScript MIME type: " + path);
+            var matcher = imports.matcher(response.body());
+            while (matcher.find()) pending.add(URI.create(path).resolve(matcher.group(1)).getPath());
+        }
+        check(visited.contains("/recipes.js") && visited.contains("/recipes-data.js"), "Application dependency graph includes the recipe engine and data");
     }
     public static void main(String[] args) throws Exception {
         var file = Files.createTempDirectory("stockpile-smoke-").resolve("inventory.json");
@@ -38,6 +58,7 @@ public final class BackendSmoke {
                 check(uri.getHost().equals("127.0.0.1"), "Binds to loopback");
                 var page=client.send(HttpRequest.newBuilder(URI.create(origin+"/")).GET().build(),HttpResponse.BodyHandlers.ofString());
                 check(page.statusCode()==200&&page.body().contains("Stockpile"),"Serves dashboard assets");
+                checkModules(client, origin);
                 var logo=client.send(HttpRequest.newBuilder(URI.create(origin+"/logo.png")).GET().build(),HttpResponse.BodyHandlers.ofByteArray());
                 check(logo.statusCode()==200&&logo.headers().firstValue("Content-Type").orElse("").equals("image/png"),"Serves the mod logo as PNG");
                 var icon=client.send(HttpRequest.newBuilder(URI.create(origin+"/items/iron_ingot.png")).GET().build(),HttpResponse.BodyHandlers.ofByteArray());

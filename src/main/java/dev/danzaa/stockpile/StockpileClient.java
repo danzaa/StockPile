@@ -109,7 +109,7 @@ public final class StockpileClient implements ClientModInitializer {
                 () -> openSettings(Minecraft.getInstance().gui.screen()),
                 () -> { setTracking(true); showDashboardLink(true); },
                 () -> { setTracking(false); if (Minecraft.getInstance().player != null) Minecraft.getInstance().player.sendSystemMessage(StockpileMessages.paused()); },
-                () -> showDashboardLink(false)));
+                () -> showDashboardLink(false), this::openDashboard));
         ChestTrackerCompat.register(this);
         UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
             Minecraft client = Minecraft.getInstance();
@@ -280,7 +280,11 @@ public final class StockpileClient implements ClientModInitializer {
         if (client.player != null) client.player.sendSystemMessage(StockpileMessages.dashboard(dashboard.url(), config.trackingEnabled));
         if (respectAutoOpen && config.autoOpenBrowser) openBrowser();
     }
-    public void openBrowser() {
+    public void openDashboard() {
+        showDashboardLink(false);
+        openBrowser();
+    }
+    private void openBrowser() {
         Minecraft client = Minecraft.getInstance();
         if (!ensureDashboard()) {
             if (client.player != null) client.player.sendSystemMessage(Component.literal("Stockpile could not start its browser dashboard. Check the game log."));

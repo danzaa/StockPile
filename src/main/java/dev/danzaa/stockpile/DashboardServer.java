@@ -20,6 +20,7 @@ public final class DashboardServer implements AutoCloseable {
             Map.entry("/", "index.html"), Map.entry("/index.html", "index.html"),
             Map.entry("/style.css", "style.css"), Map.entry("/app.js", "app.js"),
             Map.entry("/core.js", "core.js"), Map.entry("/demo.js", "demo.js"),
+            Map.entry("/recipes.js", "recipes.js"), Map.entry("/recipes-data.js", "recipes-data.js"),
             Map.entry("/schematic.js", "schematic.js"), Map.entry("/schematic-worker.js", "schematic-worker.js"),
             Map.entry("/item-icons.js", "item-icons.js"), Map.entry("/logo.png", "logo.png"),
             Map.entry("/favicon.png", "favicon.png"), Map.entry("/favicon.svg", "favicon.svg"),

@@ -29,7 +29,10 @@ public final class StockpileMessages {
         return prefix().append(Component.literal(running ? "Tracking active. " : "Tracking paused. ").withStyle(ChatFormatting.GRAY))
                 .append(Component.literal("[Open dashboard]").withStyle(style -> style.withColor(ChatFormatting.AQUA)
                         .withUnderlined(true).withClickEvent(new ClickEvent.OpenUrl(URI.create(url)))
-                        .withHoverEvent(new HoverEvent.ShowText(Component.literal("Open your local Stockpile dashboard")))));
+                        .withHoverEvent(new HoverEvent.ShowText(Component.literal("Open your local Stockpile dashboard")))))
+                .append(Component.literal("  [Copy link]").withStyle(style -> style.withColor(ChatFormatting.AQUA)
+                        .withClickEvent(new ClickEvent.CopyToClipboard(url))
+                        .withHoverEvent(new HoverEvent.ShowText(Component.literal("Copy the dashboard address to paste into your browser")))));
     }
 
     public static Component paused() {

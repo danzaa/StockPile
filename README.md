@@ -7,13 +7,13 @@ A client-side **Minecraft Java 26.2 and 26.3 / Fabric** mod that remembers your 
 1. Install **Fabric Loader 0.20.1 or newer** and **Fabric API matching your Minecraft version** (26.2 or 26.3).
 2. Place the matching Stockpile JAR from the table below in your instance's `mods` folder. Replace any older Stockpile JAR; install only one. The launcher supplies Java 25; no development tools are required to use the mod.
 3. Launch Minecraft, join a world, and open a few storage containers.
-4. Run **`/stockpile start`**, then click **Open dashboard** in chat. The shortcut prints the same link; it defaults to B and can be rebound in Minecraft's controls. Automatic browser opening defaults to OFF.
+4. Run **`/stockpile open`** to open the dashboard now. You can also run **`/stockpile start`**, then click **Open dashboard** or **Copy link** in chat. The shortcut prints the same link; it defaults to B and can be rebound in Minecraft's controls. Automatic browser opening defaults to OFF.
 5. Open **Build planner** and upload a schematic. The checklist compares its direct placement materials with your remembered storage.
 
 | Minecraft | Stockpile JAR | Fabric API used for compilation | Optional Mod Menu |
 | --- | --- | --- | --- |
-| 26.2 | `stockpile-0.3.2+26.2.jar` | `0.161.0+26.2` | `20.0.3` |
-| 26.3 | `stockpile-0.3.2+26.3.jar` | `0.166.2+26.3` | `21.0.1` |
+| 26.2 | `stockpile-0.3.3+26.2.jar` | `0.161.0+26.2` | `20.0.3` |
+| 26.3 | `stockpile-0.3.3+26.3.jar` | `0.166.2+26.3` | `21.0.1` |
 
 Each JAR declares its own Minecraft target. Commands, settings, saved inventory and dashboard features work the same way in both builds. Existing `config/stockpile` data remains readable.
 
@@ -26,15 +26,16 @@ Stockpile is standalone. Chest Tracker Port and Litematica do not need to be ins
 | Command | Result |
 | --- | --- |
 | `/stockpile` or `/stockpile settings` | Open the in-game settings screen. |
+| `/stockpile open` | Open the browser now and print a link with a copy option, keeping tracking and auto-open preferences unchanged. |
 | `/stockpile start` | Resume tracking, save that preference and print a clickable dashboard link. |
 | `/stockpile stop` or `/stop` | Pause Stockpile locally; keep the last snapshot accessible. |
 | `/stockpile link` | Print the dashboard link without changing tracking or opening a browser automatically. |
 
 `/stop` is registered as a client-side Stockpile alias. These handlers do not send server shutdown requests. Tracking stays paused across restarts until it is enabled again.
 
-In **Stockpile settings**, you can toggle tracking, the startup chat message, the shortcut, automatic browser opening and the Chest Tracker button. **Key bindings...** opens Minecraft's controls; **Unbind shortcut** removes its assigned key. A disabled or unbound shortcut does not run Stockpile actions. Commands remain available. The startup hint reads the current key name and refreshes after rebinding; turn the startup message off to suppress those hints.
+In **Stockpile settings**, you can toggle tracking, the startup chat message, the shortcut, automatic browser opening and the Chest Tracker button. **Key bindings...** opens Minecraft's controls; **Unbind shortcut** removes its assigned key. A disabled or unbound shortcut does not run Stockpile actions. `/stockpile open` remains available for an explicit browser launch. Commands remain available. The startup hint reads the current key name and refreshes after rebinding; turn the startup message off to suppress those hints.
 
-Automatic browser opening starts OFF. With it disabled, `/stockpile start` and the shortcut only print a clickable link. **Open browser** in the settings is an explicit one-time action. **Show dashboard link** needs a joined world because it sends a chat message.
+Automatic browser opening starts OFF. `/stockpile open` explicitly opens the browser regardless of that preference. Chat links also offer **Copy link** for pasting the complete address into a browser. With automatic opening disabled, `/stockpile start` and the shortcut only print a clickable link. **Open browser** in the settings is an explicit one-time action. **Show dashboard link** needs a joined world because it sends a chat message.
 
 Settings are saved in `config/stockpile/settings.json`. If **Mod Menu** for your Minecraft version is installed, its Stockpile configuration button opens the same screen. Mod Menu is optional and is not bundled. The optional integration compiles against the version listed in the table above.
 
@@ -56,7 +57,7 @@ This is an optional GUI hook and coexistence integration. Existing Chest Tracker
 
 ## Updated shulker tracking
 
-Replace the previous JAR with the 0.3.2 JAR matching your Minecraft version, then reopen the parent chests to rescan their shulker contents. Old inventory exports remain readable, but contain no packed-item data. Export a fresh snapshot after rescanning. Material totals include packed contents by default; the checkbox excludes them when you want loose items only.
+Replace the previous JAR with the 0.3.3 JAR matching your Minecraft version, then reopen the parent chests to rescan their shulker contents. Old inventory exports remain readable, but contain no packed-item data. Export a fresh snapshot after rescanning. Material totals include packed contents by default; the checkbox excludes them when you want loose items only.
 
 If a previously opened placed shulker is packed into a chest, Stockpile removes the old placed record after observing the block removal in a loaded chunk. For changes made while you were away, revisit the old location or remove its saved record to avoid stale counts. Nested modded shulkers have depth and size limits; incomplete scans are flagged.
 
@@ -144,7 +145,7 @@ Requires a JDK 25 and an internet connection for dependency retrieval.
 ./gradlew build -Pminecraft_version=26.3
 ```
 
-Outputs are `build/libs/stockpile-0.3.2+26.2.jar` and `build/libs/stockpile-0.3.2+26.3.jar`. The default target remains 26.3. Per-version build directories isolate compiled classes and Fabric modules. `minecraft-targets.json` pins each target's dependencies, and `src/versions/<version>/java` contains the small shulker-content API adapter. Both supported Minecraft versions use unobfuscated names, so no remapping step is needed. The dashboard is packaged from `dist/` into the mod.
+Outputs are `build/libs/stockpile-0.3.3+26.2.jar` and `build/libs/stockpile-0.3.3+26.3.jar`. The default target remains 26.3. Per-version build directories isolate compiled classes and Fabric modules. `minecraft-targets.json` pins each target's dependencies, and `src/versions/<version>/java` contains the small shulker-content API adapter. Both supported Minecraft versions use unobfuscated names, so no remapping step is needed. The dashboard is packaged from `dist/` into the mod.
 
 In restricted build containers where Loom cannot probe Unix-domain sockets, `python3 scripts/build-standalone.py --minecraft-version 26.2` (or `26.3`) compiles the same sources against checksum-verified official game dependencies with JDK 25 and packages the same resources. It does not launch Minecraft. Set `JAVA_HOME` to the JDK if needed. Downloaded game binaries stay in the ignored build cache and are not distributed.
 
@@ -154,7 +155,7 @@ Browser logic and format checks (Node.js 22+):
 npm test
 ```
 
-After each standalone build, run `python3 scripts/test-backend.py --minecraft-version 26.2` (or `26.3` to match the build). It checks saving/reloading, world isolation, double-chest replacement, local HTTP assets, authentication, origin checks, shulker data components, settings persistence, local command routing and dynamic clickable chat messages and the actual settings-screen render lifecycle without OpenGL. The screen regression reproduces the old double-blur exception against the released build and passes the fixed implementation.
+After each standalone build, run `python3 scripts/test-backend.py --minecraft-version 26.2` (or `26.3` to match the build). It checks saving/reloading, world isolation, double-chest replacement, local HTTP assets, the complete browser module dependency graph, authentication, origin checks, shulker data components, settings persistence, local command routing and dynamic clickable chat messages and the actual settings-screen render lifecycle without OpenGL. The screen regression reproduces the old double-blur exception against the released build and passes the fixed implementation.
 
 ## First in-game playtest
 
@@ -176,6 +177,12 @@ After each standalone build, run `python3 scripts/test-backend.py --minecraft-ve
 - [Sponge schematic format specification](https://github.com/SpongePowered/Schematic-Specification)
 
 MIT licensed. The mod logo is original pixel artwork. Inventory icons use Minecraft 26.3 item textures and block models. Minecraft and Fabric dependencies are not bundled in the distributed mod.
+
+## Browser loading fix in 0.3.3
+
+The 0.3.2 local server returned 404 for the new `recipes.js` and `recipes-data.js` imports. That prevented the browser application from starting. The server now serves both files, and the HTTP regression follows the actual application and worker import graph to catch missing modules in future builds.
+
+`/stockpile open` provides a direct browser-opening command. Every dashboard chat link also has a **Copy link** action. The browser-opening preference remains OFF by default.
 
 ## Settings render fix in 0.3.2
 
