@@ -12,14 +12,20 @@ A client-side **Minecraft Java 26.2 and 26.3 / Fabric** mod that remembers your 
 
 | Minecraft | Stockpile JAR | Fabric API used for compilation | Optional Mod Menu |
 | --- | --- | --- | --- |
-| 26.2 | `stockpile-0.3.3+26.2.jar` | `0.161.0+26.2` | `20.0.3` |
-| 26.3 | `stockpile-0.3.3+26.3.jar` | `0.166.2+26.3` | `21.0.1` |
+| 26.2 | `stockpile-0.3.4+26.2.jar` | `0.161.0+26.2` | `20.0.3` |
+| 26.3 | `stockpile-0.3.4+26.3.jar` | `0.166.2+26.3` | `21.0.1` |
 
 Each JAR declares its own Minecraft target. Commands, settings, saved inventory and dashboard features work the same way in both builds. Existing `config/stockpile` data remains readable.
 
 Stockpile is standalone. Chest Tracker Port and Litematica do not need to be installed. This project was inspired by Chest Tracker's workflow; it does not include its code. An optional S button in Chest Tracker Port's 26.2/26.3 main GUI opens Stockpile controls. Both mods can keep their own container memories.
 
 **Build status:** the Java code compiles separately against the actual Minecraft 26.2 and 26.3 clients and their matching Fabric APIs. Inventory calculations, format parsing, persistence and HTTP access controls have automated checks, and the browser upload flow was tested. A Minecraft session playtest is still required before treating the mod as release-ready.
+
+## Issues, support and suggestions
+
+Open **Stockpile settings > Issues, support & suggestions** to visit the [GitHub issue chooser](https://github.com/danzaa/StockPile/issues/new/choose). Choose **Report a bug**, **Get support** or **Suggest a feature**. This button also works from Mod Menu before joining a world. The dashboard footer has a **GitHub support** link.
+
+The mod metadata links to the [source repository](https://github.com/danzaa/StockPile) and [issue tracker](https://github.com/danzaa/StockPile/issues), so compatible mod menus and launchers can show those links. These links are included starting with Stockpile 0.3.4.
 
 ## Controls and commands
 
@@ -57,7 +63,7 @@ This is an optional GUI hook and coexistence integration. Existing Chest Tracker
 
 ## Updated shulker tracking
 
-Replace the previous JAR with the 0.3.3 JAR matching your Minecraft version, then reopen the parent chests to rescan their shulker contents. Old inventory exports remain readable, but contain no packed-item data. Export a fresh snapshot after rescanning. Material totals include packed contents by default; the checkbox excludes them when you want loose items only.
+Replace the previous JAR with the 0.3.4 JAR matching your Minecraft version, then reopen the parent chests to rescan their shulker contents. Old inventory exports remain readable, but contain no packed-item data. Export a fresh snapshot after rescanning. Material totals include packed contents by default; the checkbox excludes them when you want loose items only.
 
 If a previously opened placed shulker is packed into a chest, Stockpile removes the old placed record after observing the block removal in a loaded chunk. For changes made while you were away, revisit the old location or remove its saved record to avoid stale counts. Nested modded shulkers have depth and size limits; incomplete scans are flagged.
 
@@ -145,7 +151,7 @@ Requires a JDK 25 and an internet connection for dependency retrieval.
 ./gradlew build -Pminecraft_version=26.3
 ```
 
-Outputs are `build/libs/stockpile-0.3.3+26.2.jar` and `build/libs/stockpile-0.3.3+26.3.jar`. The default target remains 26.3. Per-version build directories isolate compiled classes and Fabric modules. `minecraft-targets.json` pins each target's dependencies, and `src/versions/<version>/java` contains the small shulker-content API adapter. Both supported Minecraft versions use unobfuscated names, so no remapping step is needed. The dashboard is packaged from `dist/` into the mod.
+Outputs are `build/libs/stockpile-0.3.4+26.2.jar` and `build/libs/stockpile-0.3.4+26.3.jar`. The default target remains 26.3. Per-version build directories isolate compiled classes and Fabric modules. `minecraft-targets.json` pins each target's dependencies, and `src/versions/<version>/java` contains the small shulker-content API adapter. Both supported Minecraft versions use unobfuscated names, so no remapping step is needed. The dashboard is packaged from `dist/` into the mod.
 
 In restricted build containers where Loom cannot probe Unix-domain sockets, `python3 scripts/build-standalone.py --minecraft-version 26.2` (or `26.3`) compiles the same sources against checksum-verified official game dependencies with JDK 25 and packages the same resources. It does not launch Minecraft. Set `JAVA_HOME` to the JDK if needed. Downloaded game binaries stay in the ignored build cache and are not distributed.
 

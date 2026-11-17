@@ -6,6 +6,11 @@
   "icon": "assets/stockpile/icon.png",
   "description": "A browser dashboard for your chest contents, stock targets and schematic materials.",
   "authors": ["Danzaa"],
+  "contact": {
+    "homepage": "https://github.com/danzaa/StockPile",
+    "sources": "https://github.com/danzaa/StockPile",
+    "issues": "https://github.com/danzaa/StockPile/issues"
+  },
   "license": "MIT",
   "environment": "client",
   "entrypoints": {"client": ["dev.danzaa.stockpile.StockpileClient"], "modmenu": ["dev.danzaa.stockpile.StockpileModMenu"]},

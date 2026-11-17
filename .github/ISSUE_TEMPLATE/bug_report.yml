@@ -1,0 +1,45 @@
+name: Report a bug
+description: Report a crash, incorrect count or another problem with Stockpile.
+title: "[Bug] "
+body:
+  - type: input
+    id: stockpile-version
+    attributes:
+      label: Stockpile version
+      placeholder: 0.3.4
+    validations:
+      required: true
+  - type: dropdown
+    id: minecraft-version
+    attributes:
+      label: Minecraft version
+      options:
+        - "26.2"
+        - "26.3"
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: setup
+    attributes:
+      label: Setup
+      description: Your operating system, Fabric Loader version and other relevant mods.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Describe the problem and what you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: How can the problem be reproduced?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Attach the crash report, relevant latest.log lines or a screenshot if available.

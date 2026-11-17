@@ -1,0 +1,22 @@
+name: Suggest a feature
+description: Suggest a feature or improvement for Stockpile.
+title: "[Suggestion] "
+body:
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Your suggestion
+      description: Describe the feature or improvement you would like.
+    validations:
+      required: true
+  - type: textarea
+    id: use-case
+    attributes:
+      label: How would this help?
+      description: Explain how you would use it in your world or build.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives or examples

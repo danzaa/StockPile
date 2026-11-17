@@ -1,10 +1,12 @@
 package dev.danzaa.stockpile;
 
+import java.net.URI;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.controls.KeyBindsScreen;
 import net.minecraft.network.chat.Component;
@@ -44,6 +46,11 @@ public final class StockpileSettingsScreen extends Screen {
         addRenderableWidget(link);
         addRenderableWidget(Button.builder(Component.literal("Open browser"), b -> owner.openDashboard())
                 .bounds(left + half + 8, top + 96, half, 20).build());
+        Button support = Button.builder(Component.literal("Issues, support & suggestions"),
+                ConfirmLinkScreen.confirmLink(this, URI.create("https://github.com/danzaa/StockPile/issues/new/choose")))
+                .bounds(left, top + 120, total, 20).build();
+        support.setTooltip(Tooltip.create(Component.literal("Open GitHub to report a bug, ask for help or suggest a feature.")));
+        addRenderableWidget(support);
         addRenderableWidget(Button.builder(Component.literal("Done"), b -> onClose())
                 .bounds(left, height - 28, total, 20).build());
     }
@@ -62,7 +69,7 @@ public final class StockpileSettingsScreen extends Screen {
         graphics.centeredText(font, title, width / 2, 16, 0xffc4dda2);
         graphics.centeredText(font, "Local container tracking and browser access", width / 2, 29, 0xffa3aaa0);
         graphics.centeredText(font, Component.literal("Current shortcut: ").append(owner.shortcutLabel()),
-                width / 2, Math.min(top + 124, height - 44), 0xffb6c4a7);
+                width / 2, Math.min(top + 148, height - 44), 0xffb6c4a7);
     }
 
     @Override public void onClose() { owner.saveConfig(); minecraft.gui.setScreen(parent); }
