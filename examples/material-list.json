@@ -1,0 +1,13 @@
+{
+  "name": "Stone path",
+  "materials": [
+    {
+      "id": "minecraft:stone_bricks",
+      "count": 192
+    },
+    {
+      "id": "minecraft:lantern",
+      "count": 12
+    }
+  ]
+}

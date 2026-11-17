@@ -1,0 +1,54 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+def targets = new groovy.json.JsonSlurper().parse(file('minecraft-targets.json'))
+def target = targets[project.minecraft_version]
+if (target == null) throw new GradleException("Unsupported Minecraft target: ${project.minecraft_version}")
+
+version = "${project.mod_version}+${project.minecraft_version}"
+group = 'dev.danzaa.stockpile'
+base { archivesName = 'stockpile' }
+layout.buildDirectory = layout.projectDirectory.dir("build/targets/${project.minecraft_version}")
+sourceSets.main.java.srcDir("src/versions/${project.minecraft_version}/java")
+
+dependencies {
+    compileOnly "com.terraformersmc:modmenu:${target.mod_menu.version}"
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${target.fabric_api}"
+}
+
+repositories { maven { url = 'https://maven.terraformersmc.com/releases/' } }
+
+processResources {
+    inputs.property 'version', project.version
+    inputs.property 'minecraft_version', project.minecraft_version
+    inputs.property 'loader_version', project.loader_version
+    filesMatching('fabric.mod.json') {
+        expand version: project.version, minecraft_version: project.minecraft_version, loader_version: project.loader_version
+    }
+    from('dist') {
+        into 'stockpile-web'
+        exclude 'downloads/**'
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 25
+    options.encoding = 'UTF-8'
+}
+
+java {
+    withSourcesJar()
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+
+jar {
+    from('LICENSE') { rename { "${it}_stockpile" } }
+}
+
+tasks.withType(Jar).configureEach {
+    destinationDirectory = layout.projectDirectory.dir('build/libs')
+}

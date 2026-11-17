@@ -1,0 +1,523 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": 1794925650523,
+  "connected": false,
+  "worlds": [
+    {
+      "id": "demo-survival",
+      "name": "Danzaa’s survival",
+      "containers": [
+        {
+          "id": "demo-0",
+          "name": "Stone & earth",
+          "type": "chest",
+          "dimension": "minecraft:overworld",
+          "position": [
+            128,
+            64,
+            -230
+          ],
+          "lastSeen": 1794925650523,
+          "packedScanComplete": true,
+          "packedItems": [],
+          "items": [
+            {
+              "id": "minecraft:cobblestone",
+              "count": 3456,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:stone",
+              "count": 1536,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:stone_bricks",
+              "count": 832,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:deepslate",
+              "count": 960,
+              "maxStack": 64
+            }
+          ]
+        },
+        {
+          "id": "demo-1",
+          "name": "Timber I",
+          "type": "chest",
+          "dimension": "minecraft:overworld",
+          "position": [
+            130,
+            64,
+            -230
+          ],
+          "lastSeen": 1794923850523,
+          "packedScanComplete": true,
+          "packedItems": [
+            {
+              "id": "minecraft:spruce_planks",
+              "count": 128,
+              "maxStack": 64,
+              "path": [
+                "Blue Shulker Box (slot 20)"
+              ]
+            },
+            {
+              "id": "minecraft:glass",
+              "count": 64,
+              "maxStack": 64,
+              "path": [
+                "Blue Shulker Box (slot 20)"
+              ]
+            }
+          ],
+          "items": [
+            {
+              "id": "minecraft:spruce_log",
+              "count": 832,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:oak_log",
+              "count": 320,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:spruce_planks",
+              "count": 256,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:oak_planks",
+              "count": 640,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:blue_shulker_box",
+              "count": 1,
+              "maxStack": 1
+            }
+          ]
+        },
+        {
+          "id": "demo-2",
+          "name": "Timber II",
+          "type": "chest",
+          "dimension": "minecraft:overworld",
+          "position": [
+            132,
+            64,
+            -230
+          ],
+          "lastSeen": 1794922050523,
+          "packedScanComplete": true,
+          "packedItems": [],
+          "items": [
+            {
+              "id": "minecraft:spruce_stairs",
+              "count": 96,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:spruce_slab",
+              "count": 48,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:spruce_trapdoor",
+              "count": 18,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:spruce_fence",
+              "count": 32,
+              "maxStack": 64
+            }
+          ]
+        },
+        {
+          "id": "demo-3",
+          "name": "Metals & minerals",
+          "type": "chest",
+          "dimension": "minecraft:overworld",
+          "position": [
+            128,
+            64,
+            -232
+          ],
+          "lastSeen": 1794920250523,
+          "packedScanComplete": true,
+          "packedItems": [],
+          "items": [
+            {
+              "id": "minecraft:iron_ingot",
+              "count": 384,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:gold_ingot",
+              "count": 96,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:diamond",
+              "count": 24,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:copper_ingot",
+              "count": 512,
+              "maxStack": 64
+            }
+          ]
+        },
+        {
+          "id": "demo-4",
+          "name": "Redstone supplies",
+          "type": "chest",
+          "dimension": "minecraft:overworld",
+          "position": [
+            130,
+            64,
+            -232
+          ],
+          "lastSeen": 1794925650523,
+          "packedScanComplete": true,
+          "packedItems": [],
+          "items": [
+            {
+              "id": "minecraft:redstone",
+              "count": 112,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:redstone_torch",
+              "count": 24,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:repeater",
+              "count": 12,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:hopper",
+              "count": 8,
+              "maxStack": 64
+            }
+          ]
+        },
+        {
+          "id": "demo-5",
+          "name": "Glass & lighting",
+          "type": "barrel",
+          "dimension": "minecraft:overworld",
+          "position": [
+            132,
+            64,
+            -232
+          ],
+          "lastSeen": 1794923850523,
+          "packedScanComplete": true,
+          "packedItems": [],
+          "items": [
+            {
+              "id": "minecraft:glass",
+              "count": 192,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:glass_pane",
+              "count": 32,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:lantern",
+              "count": 12,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:torch",
+              "count": 128,
+              "maxStack": 64
+            }
+          ]
+        },
+        {
+          "id": "demo-6",
+          "name": "Sand & gravel",
+          "type": "chest",
+          "dimension": "minecraft:overworld",
+          "position": [
+            128,
+            64,
+            -234
+          ],
+          "lastSeen": 1794922050523,
+          "packedScanComplete": true,
+          "packedItems": [],
+          "items": [
+            {
+              "id": "minecraft:sand",
+              "count": 576,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:gravel",
+              "count": 448,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:dirt",
+              "count": 1728,
+              "maxStack": 64
+            }
+          ]
+        },
+        {
+          "id": "demo-7",
+          "name": "The greenhouse",
+          "type": "chest",
+          "dimension": "minecraft:overworld",
+          "position": [
+            130,
+            64,
+            -234
+          ],
+          "lastSeen": 1794920250523,
+          "packedScanComplete": true,
+          "packedItems": [],
+          "items": [
+            {
+              "id": "minecraft:wheat",
+              "count": 320,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:carrot",
+              "count": 128,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:bone_meal",
+              "count": 64,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:oak_leaves",
+              "count": 192,
+              "maxStack": 64
+            }
+          ]
+        },
+        {
+          "id": "demo-8",
+          "name": "Building details",
+          "type": "chest",
+          "dimension": "minecraft:overworld",
+          "position": [
+            132,
+            64,
+            -234
+          ],
+          "lastSeen": 1794925650523,
+          "packedScanComplete": true,
+          "packedItems": [],
+          "items": [
+            {
+              "id": "minecraft:brick",
+              "count": 64,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:bricks",
+              "count": 128,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:flower_pot",
+              "count": 8,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:chain",
+              "count": 16,
+              "maxStack": 64
+            }
+          ]
+        },
+        {
+          "id": "demo-9",
+          "name": "Roofing",
+          "type": "chest",
+          "dimension": "minecraft:overworld",
+          "position": [
+            128,
+            65,
+            -230
+          ],
+          "lastSeen": 1794923850523,
+          "packedScanComplete": true,
+          "packedItems": [],
+          "items": [
+            {
+              "id": "minecraft:deepslate_tiles",
+              "count": 384,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:deepslate_tile_stairs",
+              "count": 128,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:deepslate_tile_slab",
+              "count": 64,
+              "maxStack": 64
+            }
+          ]
+        },
+        {
+          "id": "demo-10",
+          "name": "Odds & ends",
+          "type": "chest",
+          "dimension": "minecraft:overworld",
+          "position": [
+            130,
+            65,
+            -230
+          ],
+          "lastSeen": 1794922050523,
+          "packedScanComplete": true,
+          "packedItems": [],
+          "items": [
+            {
+              "id": "minecraft:chest",
+              "count": 24,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:barrel",
+              "count": 12,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:white_wool",
+              "count": 128,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:leather",
+              "count": 32,
+              "maxStack": 64
+            }
+          ]
+        },
+        {
+          "id": "demo-11",
+          "name": "Nether supplies",
+          "type": "barrel",
+          "dimension": "minecraft:the_nether",
+          "position": [
+            32,
+            67,
+            18
+          ],
+          "lastSeen": 1794920250523,
+          "packedScanComplete": true,
+          "packedItems": [],
+          "items": [
+            {
+              "id": "minecraft:quartz",
+              "count": 160,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:glowstone",
+              "count": 64,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:blackstone",
+              "count": 384,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:soul_sand",
+              "count": 48,
+              "maxStack": 64
+            }
+          ]
+        },
+        {
+          "id": "ender:example-player",
+          "name": "Ender Chest",
+          "type": "ender_chest",
+          "dimension": "minecraft:overworld",
+          "position": [
+            134,
+            64,
+            -230
+          ],
+          "lastSeen": 1794925650523,
+          "packedScanComplete": true,
+          "items": [
+            {
+              "id": "minecraft:diamond",
+              "count": 32,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:ender_pearl",
+              "count": 12,
+              "maxStack": 16
+            },
+            {
+              "id": "minecraft:blue_shulker_box",
+              "count": 1,
+              "maxStack": 1
+            }
+          ],
+          "packedItems": [
+            {
+              "id": "minecraft:iron_ingot",
+              "count": 128,
+              "maxStack": 64,
+              "path": [
+                "Travel supplies (slot 3)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "demo-placed-shulker",
+          "name": "Stone build supplies",
+          "type": "blue_shulker_box",
+          "dimension": "minecraft:overworld",
+          "position": [
+            136,
+            64,
+            -230
+          ],
+          "lastSeen": 1794925650523,
+          "packedScanComplete": true,
+          "items": [
+            {
+              "id": "minecraft:stone_bricks",
+              "count": 128,
+              "maxStack": 64
+            },
+            {
+              "id": "minecraft:stone_brick_stairs",
+              "count": 64,
+              "maxStack": 64
+            }
+          ],
+          "packedItems": []
+        }
+      ]
+    }
+  ]
+}

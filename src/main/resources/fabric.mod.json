@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "stockpile",
+  "version": "${version}",
+  "name": "Stockpile",
+  "icon": "assets/stockpile/icon.png",
+  "description": "A browser dashboard for your chest contents, stock targets and schematic materials.",
+  "authors": ["Danzaa"],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {"client": ["dev.danzaa.stockpile.StockpileClient"], "modmenu": ["dev.danzaa.stockpile.StockpileModMenu"]},
+  "suggests": {"modmenu": "*", "chesttracker": "*"},
+  "mixins": ["stockpile.mixins.json"],
+  "depends": {"fabricloader": ">=${loader_version}", "minecraft": "~${minecraft_version}", "java": ">=25", "fabric-api": "*"}
+}
