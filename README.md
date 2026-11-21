@@ -2,19 +2,19 @@
 
 Stockpile is a Fabric mod for **Minecraft Java 26.2 and 26.3**. Open storage in Minecraft, then use the local browser dashboard to find items, see what you have, and gather the materials for your next build.
 
-This branch is **0.4.0-dev.9**, a development build based on the 0.3.4 source. Published builds are listed on [GitHub Releases](https://github.com/danzaa/StockPile/releases).
+**Stockpile 0.4.0** includes a terrain storage map, a material checklist, and optional live team storage. Browse builds on [GitHub Releases](https://github.com/danzaa/StockPile/releases).
 
 ## Install and start
 
 1. Set up **Java 25**, **Fabric Loader 0.20.1 or newer**, and **Fabric API** for your Minecraft version. Many launchers manage the Java runtime for you.
-2. Put one matching Stockpile JAR in your instance's `mods` folder. Replace any older Stockpile JAR. Development JARs can be built [locally](#build-and-test-locally).
+2. Put one matching Stockpile JAR in your instance's `mods` folder. Replace any older Stockpile JAR. You can also [build it locally](#build-and-test-locally).
 3. Launch Minecraft, join a world or server, and open a few chests. Run **`/stockpile open`** to open the dashboard.
 4. Open **Build planner** and upload a schematic or material list. Try [Tiny Workshop](examples/tiny-workshop.litematic) or the [example material list](examples/material-list.json).
 
-| Minecraft | Development JAR | Fabric API used to build |
+| Minecraft | Stockpile JAR | Fabric API used to build |
 | --- | --- | --- |
-| 26.2 | `stockpile-0.4.0-dev.9+26.2.jar` | `0.161.0+26.2` |
-| 26.3 | `stockpile-0.4.0-dev.9+26.3.jar` | `0.166.2+26.3` |
+| 26.2 | `stockpile-0.4.0+26.2.jar` | `0.161.0+26.2` |
+| 26.3 | `stockpile-0.4.0+26.3.jar` | `0.166.2+26.3` |
 
 Mod Menu and [Chest Tracker Port](https://modrinth.com/mod/chest-tracker-port) are optional. Litematica is only needed if you use it to create or work with schematics in-game.
 
@@ -29,6 +29,8 @@ Mod Menu and [Chest Tracker Port](https://modrinth.com/mod/chest-tracker-port) a
 
 With Chest Tracker Port installed, its main screen has a Stockpile shortcut. Its **Where Is It** item-ID search can also find compatible Stockpile locations in loaded chunks in the current dimension.
 
+![Stockpile storage map with terrain and three selected source chests](docs/images/storage-map.jpg)
+
 ## Plan a build
 
 1. Upload a `.litematic`, Sponge `.schem`, structure `.nbt`, or an ID-based JSON or CSV material list. CSV needs **Item ID** and **Total**, **Count**, or **Required** columns. Display-name-only exports need item IDs first.
@@ -39,11 +41,15 @@ With Chest Tracker Port installed, its main screen has a Stockpile shortcut. Its
 
 Material estimates cover the schematic's direct placement items. Review any notes about unsupported blocks, overlapping regions, fluids, or block data. Player inventory, existing blocks at the placement site, and custom recipes are outside the estimates. Schematic uploads are limited to 25 MB per file, 64 MB of expanded NBT, and 8 million block positions.
 
+![Stockpile Build planner with materials marked as collected](docs/images/build-planner.jpg)
+
 ### Stage materials in a build chest
 
 In a private single-player world, open a regular or double chest and tick **Build chest** below its slots. In **Build planner**, open **Schematic chest**, choose **Review fill**, and confirm. With sources selected on the Storage map, Stockpile moves loose materials from eligible storage in loaded chunks in your current dimension. It respects reservations and available space. For a chest you fill by hand, clear the source selection and confirm **Check contents**.
 
 **Auto-clear on completion** starts on. After you confirm a build, the chest's checkbox clears when it holds every required quantity, including items you add later. You can change this in the web planner or with **Clear on completion** in Minecraft's Stockpile settings. Your materials stay in the chest.
+
+![Minecraft chest screen with the Stockpile, Exclude, and checked Build chest controls](docs/images/build-chest.png)
 
 ## Shared storage
 
