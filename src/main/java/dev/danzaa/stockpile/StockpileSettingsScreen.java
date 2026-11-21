@@ -16,7 +16,7 @@ public final class StockpileSettingsScreen extends Screen {
     private final StockpileClient owner;
     private int top;
     public StockpileSettingsScreen(Screen parent, StockpileClient owner) {
-        super(Component.literal("Stockpile settings"));
+        super(Component.translatable("stockpile.settings.title"));
         this.parent = parent; this.owner = owner;
     }
 
@@ -24,51 +24,70 @@ public final class StockpileSettingsScreen extends Screen {
         int total = Math.min(332, width - 20), left = (width - total) / 2, half = (total - 8) / 2;
         top = Math.max(44, height / 2 - 80);
         StockpileConfig config = owner.config();
-        toggle("Tracking", () -> config.trackingEnabled, owner::setTracking, left, top, total,
-                "Pause or resume container tracking. Saved contents remain available while paused.");
-        toggle("Startup message", () -> config.showStartupMessage, value -> config.showStartupMessage = value,
-                left, top + 24, half, "Show a chat hint when joining. The hint uses your current key binding.");
-        toggle("Auto-open browser", () -> config.autoOpenBrowser, value -> config.autoOpenBrowser = value,
-                left + half + 8, top + 24, half, "When off, commands and the shortcut print a clickable link without opening a browser.");
-        toggle("Shortcut", () -> config.keybindEnabled, value -> config.keybindEnabled = value,
-                left, top + 48, half, "Disable the Stockpile shortcut while keeping commands available.");
-        addRenderableWidget(Button.builder(Component.literal("Key bindings..."), b ->
+        toggle("stockpile.settings.tracking", () -> config.trackingEnabled, owner::setTracking, left, top, total,
+                "stockpile.settings.tracking_hint");
+        toggle("stockpile.settings.startup", () -> config.showStartupMessage, value -> config.showStartupMessage = value,
+                left, top + 24, half, "stockpile.settings.startup_hint");
+        toggle("stockpile.settings.browser", () -> config.autoOpenBrowser, value -> config.autoOpenBrowser = value,
+                left + half + 8, top + 24, half, "stockpile.settings.browser_hint");
+        toggle("stockpile.settings.shortcut", () -> config.keybindEnabled, value -> config.keybindEnabled = value,
+                left, top + 48, half, "stockpile.settings.shortcut_hint");
+        addRenderableWidget(Button.builder(Component.translatable("controls.keybinds.title"), b ->
                 minecraft.gui.setScreen(new KeyBindsScreen(this, minecraft.options))).bounds(left + half + 8, top + 48, half, 20).build());
-        toggle("Chest Tracker button", () -> config.chestTrackerButton, value -> config.chestTrackerButton = value,
-                left, top + 72, half, "Add an S button to Chest Tracker's main GUI when Chest Tracker is installed.");
-        addRenderableWidget(Button.builder(Component.literal("Unbind shortcut"), b -> {
+        toggle("stockpile.settings.tracker", () -> config.chestTrackerButton, value -> config.chestTrackerButton = value,
+                left, top + 72, half, "stockpile.settings.tracker_hint");
+        addRenderableWidget(Button.builder(Component.translatable("stockpile.settings.unbind"), b -> {
             owner.unbindShortcut(); rebuildWidgets();
         }).bounds(left + half + 8, top + 72, half, 20).build());
-        Button link = Button.builder(Component.literal("Show dashboard link"), b -> owner.showDashboardLink(false))
+        Button link = Button.builder(Component.translatable("stockpile.settings.link"), b -> owner.showDashboardLink(false))
                 .bounds(left, top + 96, half, 20).build();
         link.active = minecraft.player != null;
-        link.setTooltip(Tooltip.create(Component.literal("Send the dashboard link to chat. Join a world to use this action.")));
+        link.setTooltip(Tooltip.create(Component.translatable("stockpile.settings.link_hint")));
         addRenderableWidget(link);
-        addRenderableWidget(Button.builder(Component.literal("Open browser"), b -> owner.openDashboard())
+        addRenderableWidget(Button.builder(Component.translatable("stockpile.settings.open"), b -> owner.openDashboard())
                 .bounds(left + half + 8, top + 96, half, 20).build());
-        Button support = Button.builder(Component.literal("Issues, support & suggestions"),
+        Button support = Button.builder(Component.translatable("stockpile.settings.support"),
                 ConfirmLinkScreen.confirmLink(this, URI.create("https://github.com/danzaa/StockPile/issues/new/choose")))
-                .bounds(left, top + 120, total, 20).build();
-        support.setTooltip(Tooltip.create(Component.literal("Open GitHub to report a bug, ask for help or suggest a feature.")));
+                .bounds(left + half + 8, height - 28, half, 20).build();
+        support.setTooltip(Tooltip.create(Component.translatable("stockpile.settings.support_hint")));
         addRenderableWidget(support);
-        addRenderableWidget(Button.builder(Component.literal("Done"), b -> onClose())
-                .bounds(left, height - 28, total, 20).build());
+        addRenderableWidget(Button.builder(schematicLabel(config), b -> {
+            owner.setSchematicChest(!config.schematicChestEnabled);
+            b.setMessage(schematicLabel(config));
+        }).bounds(left, top + 120, half, 20).build());
+        var autoClear = Button.builder(autoClearLabel(config), b -> {
+            owner.setSchematicChestAutoClear(!config.schematicChestAutoClear);
+            b.setMessage(autoClearLabel(config));
+        }).bounds(left + half + 8, top + 120, half, 20).build();
+        autoClear.setTooltip(Tooltip.create(Component.translatable("stockpile.schematic.auto_clear_hint")));
+        addRenderableWidget(autoClear);
+        addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose())
+                .bounds(left, height - 28, half, 20).build());
+    }
+
+    private Component schematicLabel(StockpileConfig config) {
+        return Component.translatable(config.schematicChestEnabled ? "stockpile.schematic.on" : "stockpile.schematic.off");
+    }
+
+    private Component autoClearLabel(StockpileConfig config) {
+        return Component.translatable("stockpile.schematic.auto_clear",
+                Component.translatable(config.schematicChestAutoClear ? "options.on" : "options.off"));
     }
 
     private void toggle(String label, BooleanSupplier get, Consumer<Boolean> set, int x, int y, int width, String hint) {
-        Button button = Button.builder(Component.literal(label + ": " + (get.getAsBoolean() ? "ON" : "OFF")), b -> {
+        Button button = Button.builder(Component.translatable(label, Component.translatable(get.getAsBoolean() ? "options.on" : "options.off")), b -> {
             set.accept(!get.getAsBoolean()); owner.saveConfig();
-            b.setMessage(Component.literal(label + ": " + (get.getAsBoolean() ? "ON" : "OFF")));
+            b.setMessage(Component.translatable(label, Component.translatable(get.getAsBoolean() ? "options.on" : "options.off")));
         }).bounds(x, y, width, 20).build();
-        button.setTooltip(Tooltip.create(Component.literal(hint)));
+        button.setTooltip(Tooltip.create(Component.translatable(hint)));
         addRenderableWidget(button);
     }
 
     @Override public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         super.extractRenderState(graphics, mouseX, mouseY, delta);
         graphics.centeredText(font, title, width / 2, 16, 0xffc4dda2);
-        graphics.centeredText(font, "Local container tracking and browser access", width / 2, 29, 0xffa3aaa0);
-        graphics.centeredText(font, Component.literal("Current shortcut: ").append(owner.shortcutLabel()),
+        graphics.centeredText(font, Component.translatable("stockpile.settings.subtitle"), width / 2, 29, 0xffa3aaa0);
+        graphics.centeredText(font, Component.translatable("stockpile.settings.current", owner.shortcutLabel()),
                 width / 2, Math.min(top + 148, height - 44), 0xffb6c4a7);
     }
 

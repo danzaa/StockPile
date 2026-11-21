@@ -1,0 +1,16 @@
+Stockpile
+Copyright (c) 2026 Danzaa
+
+Stockpile's original source code and artwork are available under the MIT
+License in LICENSE (LICENSE_stockpile in the mod JAR).
+
+Minecraft names, textures, and models belong to their respective owners.
+The inventory artwork derived from those assets is outside Stockpile's MIT
+grant. See https://www.minecraft.net/en-us/usage-guidelines.
+
+Stockpile is an independent project. Mojang and Microsoft do not approve,
+endorse, or sponsor it.
+
+Chest Tracker Port is a separately installed optional mod under
+LGPL-3.0-only. It and its dependencies are not included in Stockpile.
+https://modrinth.com/mod/chest-tracker-port

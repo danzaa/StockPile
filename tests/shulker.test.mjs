@@ -37,3 +37,10 @@ test('rejects negative packed counts and malformed nested locations',()=>{
     const c=storage();change(c);assert.throws(()=>validateSnapshot({schemaVersion:1,worlds:[{id:'world',containers:[c]}]}));
   }
 });
+test('packed paths collapse repeated stacks only within the same box and parent container',()=>{
+ const a=storage();a.packedItems=Array.from({length:27},()=>({id:'minecraft:diamond',name:'Diamond',count:64,maxStack:64,path:['Shulker Box (slot 22)']}));
+ a.packedItems.push({id:'minecraft:diamond',count:1,path:['Shulker Box (slot 23)']});
+ const b={...a,id:'other-chest',position:[99,64,2],packedItems:[{id:'minecraft:diamond',count:64,path:['Shulker Box (slot 22)']}]};
+ const row=aggregate([a,b]).get('minecraft:diamond');assert.equal(row.count,1793);assert.equal(row.locations.length,2);
+ assert.deepEqual(row.locations[0].packedPaths,[{path:['Shulker Box (slot 22)'],count:1728},{path:['Shulker Box (slot 23)'],count:1}]);assert.equal(row.locations[1].packedPaths[0].count,64);
+});

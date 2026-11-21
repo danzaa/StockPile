@@ -11,7 +11,7 @@ parser = argparse.ArgumentParser(description='Test the selected Stockpile build 
 targets = json.loads((root / 'minecraft-targets.json').read_text())
 parser.add_argument('--minecraft-version', choices=targets, default=properties['minecraft_version'])
 version = parser.parse_args().minecraft_version
-build = root / 'build' / 'targets' / version
+build = root / 'build' / 'standalone-targets' / version
 cache = build / 'classpath.txt'
 if not cache.exists():
     raise SystemExit('Run python3 scripts/build-standalone.py first.')
@@ -25,7 +25,7 @@ generated = build / 'test-generated'
 generated.mkdir(parents=True, exist_ok=True)
 render_test = generated / 'SettingsRenderSmoke.java'
 render_test.write_text((root / 'tests/SettingsRenderSmoke.java.template').read_text().replace('__RENDER_PIPELINE__', targets[version]['test_render_pipeline']))
-subprocess.run([javac, '--release', '25', '-proc:none', '-cp', classpath, '-d', str(out), str(root / 'tests/BackendSmoke.java'), str(root / 'tests/ShulkerScannerSmoke.java'), str(root / 'tests/SettingsCommandsSmoke.java'), str(render_test)], check=True)
+subprocess.run([javac, '--release', '25', '-proc:none', '-cp', classpath, '-d', str(out), str(root / 'tests/BackendSmoke.java'), str(root / 'tests/ShulkerScannerSmoke.java'), str(root / 'tests/SettingsCommandsSmoke.java'), str(root / 'tests/ItemFinderSmoke.java'), str(root / 'tests/OptionalSearchApiSmoke.java'), str(root / 'tests/PlanningSmoke.java'), str(root / 'tests/WorldSwitchSmoke.java'), str(root / 'tests/ChestMapSmoke.java'), str(render_test)], check=True)
 subprocess.run([java, '-cp', str(out) + os.pathsep + classpath, 'BackendSmoke'], check=True)
 
 subprocess.run([java, '-Dstockpile.test.minecraft=' + version, '-cp', str(out) + os.pathsep + classpath, 'ShulkerScannerSmoke'], check=True)
@@ -33,3 +33,10 @@ subprocess.run([java, '-Dstockpile.test.minecraft=' + version, '-cp', str(out) +
 subprocess.run([java, '-cp', str(out) + os.pathsep + classpath, 'SettingsCommandsSmoke'], check=True)
 
 subprocess.run([java, '-cp', str(out) + os.pathsep + classpath, 'SettingsRenderSmoke'], check=True)
+subprocess.run([java, '-cp', str(out) + os.pathsep + classpath, 'ItemFinderSmoke'], check=True)
+subprocess.run([java, '-cp', str(out) + os.pathsep + classpath, 'PlanningSmoke'], check=True)
+subprocess.run([java, '-cp', str(out) + os.pathsep + classpath, 'WorldSwitchSmoke'], check=True)
+subprocess.run([java, '-cp', str(out) + os.pathsep + classpath, 'ChestMapSmoke'], check=True)
+if os.environ.get('STOCKPILE_WHEREISIT_JAR'):
+    optional_jar = Path(os.environ['STOCKPILE_WHEREISIT_JAR']).resolve(strict=True)
+    subprocess.run([java, '-cp', str(out) + os.pathsep + classpath + os.pathsep + str(optional_jar), 'dev.danzaa.stockpile.OptionalSearchApiSmoke'], check=True)

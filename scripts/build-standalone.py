@@ -47,7 +47,7 @@ def main():
     parser.add_argument('--minecraft-version', choices=targets, default=properties['minecraft_version'])
     version = parser.parse_args().minecraft_version
     target = targets[version]
-    build = PROJECT / 'build' / 'targets' / version
+    build = PROJECT / 'build' / 'standalone-targets' / version
     mod_version = properties['mod_version'] + '+' + version
     java_dir = Path(os.environ['JAVA_HOME']) / 'bin' if os.environ.get('JAVA_HOME') else None
     javac = str(java_dir / ('javac.exe' if os.name == 'nt' else 'javac')) if java_dir else shutil.which('javac')
@@ -98,6 +98,7 @@ def main():
     mod = resources / 'fabric.mod.json'
     mod.write_text(mod.read_text().replace('${version}', mod_version).replace('${minecraft_version}', version).replace('${loader_version}', loader_version))
     (resources / 'LICENSE_stockpile').write_text((PROJECT / 'LICENSE').read_text())
+    (resources / 'NOTICE_stockpile').write_text((PROJECT / 'NOTICE').read_text())
     output = PROJECT / 'build' / 'libs' / f'stockpile-{mod_version}.jar'
     output.parent.mkdir(exist_ok=True)
     subprocess.run([jar, '--create', '--file', str(output), '-C', str(classes), '.', '-C', str(resources), '.'], check=True)
