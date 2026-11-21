@@ -50,7 +50,7 @@ def catalog(path, version):
             raw = json.loads(archive.read(path))
             kind = raw.get('type', '').removeprefix('minecraft:')
             result = raw.get('result', {})
-            if kind not in {'crafting_shaped', 'crafting_shapeless', 'stonecutting'} or not isinstance(result, dict) or result.get('components'):
+            if kind not in {'crafting_shaped', 'crafting_shapeless', 'stonecutting', 'smelting', 'blasting'} or not isinstance(result, dict) or result.get('components'):
                 skipped[kind] += 1
                 continue
             if kind == 'crafting_shaped':
@@ -70,14 +70,15 @@ def catalog(path, version):
                 'id': 'minecraft:' + Path(path).stem,
                 'output': result['id'],
                 'count': result.get('count', 1),
-                'station': 'stonecutter' if kind == 'stonecutting' else 'crafting',
+                'station': {'stonecutting':'stonecutter','smelting':'furnace','blasting':'blast_furnace'}.get(kind,'crafting'),
+                **({'cookTicks': raw.get('cookingtime',100 if kind=='blasting' and version=='26.2' else 200) // (2 if kind=='blasting' and version=='26.3' else 1)} if kind in {'smelting','blasting'} else {}),
                 'ingredients': [{'items': list(items), 'count': amount} for items, amount in sorted(grouped.items())],
             })
-        return {'minecraftVersion': version, 'recipes': recipes, 'excludedTypes': dict(sorted(skipped.items()))}
+        return {'minecraftVersion': version, 'fuels': [{'id':'minecraft:'+name,'ticks':ticks,**({'remainder':'minecraft:bucket'} if name=='lava_bucket' else {})} for name,ticks in [('coal',1600),('charcoal',1600),('coal_block',16000),('blaze_rod',2400),('dried_kelp_block',4001),('lava_bucket',20000)]], 'recipes': recipes, 'excludedTypes': dict(sorted(skipped.items()))}
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Extract vanilla crafting and stonecutting recipes from official Minecraft clients.')
+    parser = argparse.ArgumentParser(description='Extract vanilla crafting, stonecutting and cooking recipes from official Minecraft clients.')
     parser.add_argument('--jars-directory', type=Path, default=ROOT / 'build/standalone-deps')
     args = parser.parse_args()
     targets = json.loads((ROOT / 'minecraft-targets.json').read_text())
@@ -85,7 +86,7 @@ def main():
     output = ROOT / 'dist/recipes-data.js'
     output.write_text('export const recipeCatalogs=' + json.dumps(catalogs, separators=(',', ':')) + ';\n')
     for version, data in catalogs.items():
-        print(version, len(data['recipes']), 'crafting/stonecutting recipes')
+        print(version, len(data['recipes']), 'crafting/stonecutting/cooking recipes')
 
 
 if __name__ == '__main__':

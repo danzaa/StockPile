@@ -21,12 +21,16 @@ dependencies {
 
 repositories { maven { url = 'https://maven.terraformersmc.com/releases/' } }
 
+def resourceProperties = [
+    version: project.version.toString(),
+    minecraft_version: project.minecraft_version.toString(),
+    loader_version: project.loader_version.toString()
+]
+
 processResources {
-    inputs.property 'version', project.version
-    inputs.property 'minecraft_version', project.minecraft_version
-    inputs.property 'loader_version', project.loader_version
+    inputs.properties resourceProperties
     filesMatching('fabric.mod.json') {
-        expand version: project.version, minecraft_version: project.minecraft_version, loader_version: project.loader_version
+        expand resourceProperties
     }
     from('dist') {
         into 'stockpile-web'
@@ -47,6 +51,7 @@ java {
 
 jar {
     from('LICENSE') { rename { "${it}_stockpile" } }
+    from('NOTICE') { rename { "${it}_stockpile" } }
 }
 
 tasks.withType(Jar).configureEach {

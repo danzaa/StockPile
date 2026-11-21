@@ -15,12 +15,16 @@ public final class StockpileConfig {
     public boolean keybindEnabled = true;
     public boolean autoOpenBrowser = false;
     public boolean chestTrackerButton = true;
+    public boolean schematicChestEnabled = true;
+    public boolean schematicChestAutoClear = true;
+    public HighlightOptions highlight = HighlightOptions.DEFAULT;
 
     public static StockpileConfig load(Path path, Logger logger) {
         if (!Files.exists(path)) return new StockpileConfig();
         try {
             StockpileConfig config = GSON.fromJson(Files.readString(path), StockpileConfig.class);
             if (config == null) throw new IOException("Settings are empty");
+            if (config.highlight == null) config.highlight = HighlightOptions.DEFAULT;
             return config;
         } catch (Exception e) {
             logger.warn("Could not read Stockpile settings; keeping a backup and using defaults", e);

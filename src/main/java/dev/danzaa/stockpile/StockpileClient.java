@@ -13,10 +13,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
@@ -50,7 +53,10 @@ public final class StockpileClient implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("stockpile");
     public static StockpileClient INSTANCE;
     private InventoryStore store;
+    private final FindHighlight findHighlight = new FindHighlight();
+    private final SessionTerrain sessionTerrain = new SessionTerrain();
     private DashboardServer dashboard;
+    private SharedStorageClient sharedStorage;
     private StockpileConfig config;
     private Path configPath;
     private String registryJson = "{}";
@@ -61,6 +67,7 @@ public final class StockpileClient implements ClientModInitializer {
     private int activeMenu = -1;
     private String worldId;
     private String worldName;
+    private CompletableFuture<Void> schematicCheck;
     private boolean wasConnected;
     private boolean settingsRequested;
     private net.minecraft.client.gui.screens.Screen settingsParent;
@@ -80,6 +87,9 @@ public final class StockpileClient implements ClientModInitializer {
         store = new InventoryStore(FabricLoader.getInstance().getConfigDir().resolve("stockpile/inventory.json"), LOGGER);
         store.minecraftVersion(FabricLoader.getInstance().getModContainer("minecraft").orElseThrow().getMetadata().getVersion().getFriendlyString());
         store.tracking(config.trackingEnabled);
+        store.schematicSettings(new SchematicFunnel.SettingsUpdate(config.schematicChestEnabled, config.schematicChestAutoClear));
+        sharedStorage=new SharedStorageClient(store,()->{var client=Minecraft.getInstance();if(client.player==null||client.level==null)return null;ensureWorld(client);return worldId;});
+        sharedStorage.register();
         open = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.stockpile.open", InputConstants.KEY_B,
                 KeyMapping.Category.register(Identifier.fromNamespaceAndPath("stockpile", "main"))));
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
@@ -92,6 +102,7 @@ public final class StockpileClient implements ClientModInitializer {
                 }
                 registryJson = registry.toString();
                 ensureDashboard();
+                ChestTrackerFindCompat.register(this);
                 LOGGER.info("Stockpile dashboard is ready. Use /stockpile start for the link.");
             } catch (Exception e) { LOGGER.error("Could not start Stockpile dashboard", e); }
         });
@@ -99,18 +110,22 @@ public final class StockpileClient implements ClientModInitializer {
             if (dashboard != null) dashboard.close();
             store.close();
         });
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
-            settingsRequested = false; settingsParent = null;
-            pending = null; active = null; activeMenu = -1; worldId = null; wasConnected = false;
-            placedShulkers.clear();
-            store.connected(false);
+        ClientPlayConnectionEvents.JOIN.register((handler,sender,client)->{
+            resetWorld();
+            ensureWorld(client);
+            if (client.level != null) store.activeDimension(client.level.dimension().identifier().toString());
         });
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> resetWorld());
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, access) -> StockpileCommands.register(dispatcher,
                 () -> openSettings(Minecraft.getInstance().gui.screen()),
                 () -> { setTracking(true); showDashboardLink(true); },
                 () -> { setTracking(false); if (Minecraft.getInstance().player != null) Minecraft.getInstance().player.sendSystemMessage(StockpileMessages.paused()); },
-                () -> showDashboardLink(false), this::openDashboard));
+                () -> showDashboardLink(false), this::openDashboard, this::findItem, () -> {
+                    findHighlight.clear();
+                    if (Minecraft.getInstance().player != null) Minecraft.getInstance().player.sendSystemMessage(Component.literal("[Stockpile] Find highlight cleared."));
+                }, () -> openBrowser("&view=sharing")));
         ChestTrackerCompat.register(this);
+        ChestScreenControls.register(this);
         UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
             Minecraft client = Minecraft.getInstance();
             if (!config.trackingEnabled || level != client.level || player != client.player || player.isShiftKeyDown()) return InteractionResult.PASS;
@@ -144,11 +159,31 @@ public final class StockpileClient implements ClientModInitializer {
                 client.gui.setScreen(new StockpileSettingsScreen(parent, this));
             }
             ticks++;
+            findHighlight.tick(client);
+            if(ticks%20==0)sharedStorage.tick();
             boolean connected = client.player != null && client.level != null;
             store.connected(connected);
-            if (!connected) { pending = null; active = null; activeMenu = -1; worldId = null; }
+            if (!connected) { if(worldId!=null||wasConnected)resetWorld(); }
             else {
                 ensureWorld(client);
+                store.activeDimension(client.level.dimension().identifier().toString());
+                var singleplayer = client.getSingleplayerServer();
+                store.schematicFunnelAvailable(singleplayer != null && !singleplayer.isPublished());
+                if (ticks % 20 == 0 && singleplayer != null && !singleplayer.isPublished() && worldId != null &&
+                        store.schematicCheck(worldId) != null && (schematicCheck == null || schematicCheck.isDone())) {
+                    String checkedWorld = worldId;
+                    var player = client.player.getUUID();
+                    schematicCheck = singleplayer.submit(() -> {
+                        var owner = singleplayer.getPlayerList().getPlayer(player);
+                        if (owner != null && !singleplayer.isPublished()) SchematicFunnel.checkCompletion(owner.level(), store, checkedWorld);
+                    });
+                }
+                if (ticks % 10 == 0) {
+                    var connection = client.getConnection();
+                    boolean hasCommands = connection != null && connection.getCommands().getRoot().getChild("stockpileteam") != null;
+                    store.teamConnection(hasCommands ? "operator" : ClientPlayNetworking.canSend(SharedPayload.TYPE) ? "server" : "client-only");
+                }
+                if (worldId != null) sessionTerrain.tick(worldId, client.level, client.player.blockPosition());
                 if (client.player.containerMenu == client.player.inventoryMenu) { active = null; activeMenu = -1; }
                 else if (config.trackingEnabled && ticks % 5 == 0 && active != null && client.player.containerMenu.containerId == activeMenu)
                     capture(client, client.player.containerMenu);
@@ -174,8 +209,19 @@ public final class StockpileClient implements ClientModInitializer {
         });
     }
 
+    private void resetWorld(){
+        store.connected(false);
+        findHighlight.clear();sharedStorage.disconnect();
+        sessionTerrain.resetSession();
+        settingsRequested=false;settingsParent=null;
+        pending=null;active=null;activeMenu=-1;worldId=null;worldName=null;wasConnected=false;
+        schematicCheck = null;
+        lastCapturedId=null;lastItems=List.of();lastPackedItems=List.of();lastStoredAt=0;
+        placedShulkers.clear();
+    }
+
     private void ensureWorld(Minecraft client) {
-        if (worldId != null || client.player == null) return;
+        if (worldId != null || client.player == null || client.level == null || client.getConnection()==null) return;
         String source;
         if (client.getSingleplayerServer() != null) {
             var server = client.getSingleplayerServer();
@@ -188,8 +234,10 @@ public final class StockpileClient implements ClientModInitializer {
             source = "connection:" + client.getConnection().getConnection().getRemoteAddress();
             worldName = "Multiplayer world";
         }
+        if(worldName==null||worldName.isBlank())worldName=client.getSingleplayerServer()!=null?"Singleplayer world":"Multiplayer world";
         try {
             worldId = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest((source + ":" + client.player.getUUID()).getBytes(StandardCharsets.UTF_8))).substring(0, 24);
+            store.activeWorld(worldId,worldName);
             placedShulkers.clear();
             for (var c : store.containers(worldId)) if (c.type().endsWith("shulker_box")) {
                 BlockPos pos = new BlockPos(c.position().get(0), c.position().get(1), c.position().get(2));
@@ -243,15 +291,214 @@ public final class StockpileClient implements ClientModInitializer {
         lastCapturedId = active.id(); lastItems = items; lastPackedItems = scan.packedItems(); lastStoredAt = now;
         String title = client.gui.screen() instanceof AbstractContainerScreen<?> screen ? screen.getTitle().getString() : active.type();
         BlockPos p = active.pos();
-        store.put(worldId, worldName, new InventoryStore.Container(active.id(), title, active.type(), active.dimension(),
-                List.of(p.getX(), p.getY(), p.getZ()), active.members(), now, items, scan.packedItems(), scan.complete()));
+        var snapshot=new InventoryStore.Container(active.id(), title, active.type(), active.dimension(),
+                List.of(p.getX(), p.getY(), p.getZ()), active.members(), now, items, scan.packedItems(), scan.complete());
+        if(!store.externalShared(worldId,snapshot))store.put(worldId,worldName,snapshot);
         if (active.type().endsWith("shulker_box")) placedShulkers.put(active.id(), active);
     }
 
     public StockpileConfig config() { return config; }
+    public List<InventoryStore.Container> findMemories() {
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null || client.level == null) return List.of();
+        ensureWorld(client);
+        String dimension = client.level.dimension().identifier().toString();
+        return store.containers(worldId).stream().filter(c -> dimension.equals(c.dimension())).toList();
+    }
+    private void findItem(String itemId) {
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null || client.level == null) return;
+        ensureWorld(client);
+        try { performFind(new ItemFinder.Request(worldId, null, itemId.contains(":") ? itemId : "minecraft:" + itemId, true), true); }
+        catch (IllegalArgumentException e) { client.player.sendSystemMessage(Component.literal("[Stockpile] Use /stockpile find minecraft:stone (an item ID).")); }
+    }
+    private static <T> CompletableFuture<T> onClient(Supplier<T> action) {
+        var result = new CompletableFuture<T>();
+        Minecraft.getInstance().execute(() -> {
+            if (result.isDone()) return;
+            try { result.complete(action.get()); }
+            catch (RuntimeException e) { result.completeExceptionally(e); }
+        });
+        return result;
+    }
+
+    private CompletableFuture<HighlightOptions> highlightSettings(HighlightOptions options) {
+        return onClient(() -> {
+            if (options != null) {
+                config.highlight = options;
+                findHighlight.clear();
+                saveConfig();
+            }
+            return config.highlight;
+        });
+    }
+
+    private TerrainSnapshot.Result captureTerrain(TerrainSnapshot.Request request) {
+        var client = Minecraft.getInstance();
+        if (client.player == null || client.level == null) {
+            return new TerrainSnapshot.Result(409, "Join this world in Minecraft to capture terrain.", null);
+        }
+        ensureWorld(client);
+        if (!isCurrentWorkspace(request.worldId())) {
+            return new TerrainSnapshot.Result(409, "Join the selected world in Minecraft first.", null);
+        }
+        if (!request.dimension().equals(client.level.dimension().identifier().toString())) {
+            return new TerrainSnapshot.Result(409, "Enter the selected dimension in Minecraft to capture its terrain.", null);
+        }
+        return sessionTerrain.capture(new TerrainSnapshot.Request(worldId, request.dimension()), client.level, client.player.blockPosition());
+    }
+
+    private boolean isCurrentWorkspace(String id) {
+        if (id.equals(worldId)) return true;
+        return store.isLiveSharedWorkspace(id, worldId);
+    }
+
+    private CompletableFuture<SchematicFunnel.Result> fillSchematicChest(SchematicFunnel.Request request) {
+        var client = Minecraft.getInstance();
+        var result = new CompletableFuture<SchematicFunnel.Result>();
+        client.execute(() -> {
+            if (result.isDone()) return;
+            if (!store.schematicChestEnabled()) {
+                result.complete(SchematicFunnel.Result.unavailable(409, "Schematic chest is disabled in Stockpile settings."));
+                return;
+            }
+            var server = client.getSingleplayerServer();
+            if (server == null || client.player == null || client.level == null || !store.canFunnel(request.worldId(), request.session())) {
+                result.complete(SchematicFunnel.Result.unavailable(409,
+                        "Join the selected single-player world to fill a schematic chest."));
+                return;
+            }
+            var dimension = client.level.dimension();
+            var player = client.player.getUUID();
+            String name = worldName;
+            server.submit(() -> {
+                if (result.isDone()) return null;
+                var owner = server.getPlayerList().getPlayer(player);
+                if (server.isPublished() || owner == null || !owner.level().dimension().equals(dimension)) {
+                    return SchematicFunnel.Result.unavailable(409, "Stay in the destination dimension in an unshared single-player world.");
+                }
+                return SchematicFunnel.fill(owner.level(), store, name, request);
+            }).whenComplete((reply, failure) -> {
+                if (failure != null) result.completeExceptionally(failure);
+                else result.complete(reply);
+            });
+        });
+        return result;
+    }
+
+    private CompletableFuture<SchematicFunnel.Settings> schematicChestSettings(SchematicFunnel.SettingsUpdate update) {
+        return onClient(() -> updateSchematicSettings(update));
+    }
+
+    private SchematicFunnel.Settings updateSchematicSettings(SchematicFunnel.SettingsUpdate update) {
+        var settings = store.schematicSettings(update);
+        if (update != null) {
+            config.schematicChestEnabled = settings.enabled();
+            config.schematicChestAutoClear = settings.autoClear();
+            saveConfig();
+        }
+        return settings;
+    }
+
+    void setSchematicChest(boolean enabled) {
+        updateSchematicSettings(new SchematicFunnel.SettingsUpdate(enabled, null));
+    }
+
+    void setSchematicChestAutoClear(boolean autoClear) {
+        updateSchematicSettings(new SchematicFunnel.SettingsUpdate(null, autoClear));
+    }
+
+    private ItemFinder.Reply performFind(ItemFinder.Request request, boolean sendChat) {
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null || client.level == null) return new ItemFinder.Reply(409, "Join the saved world in Minecraft first.");
+        ensureWorld(client);
+        if (!isCurrentWorkspace(request.worldId())) return new ItemFinder.Reply(409, "This inventory belongs to another world or player. Join that world first.");
+        findHighlight.clear();
+        String dimension = client.level.dimension().identifier().toString();
+        var matches = ItemFinder.search(store, request, request.worldId(), dimension, client.player.getX(), client.player.getY(), client.player.getZ());
+        if (matches.isEmpty()) {
+            String message = "No remembered supplies match this item and location. Reopen the container to refresh it.";
+            if (sendChat) client.player.sendSystemMessage(Component.literal("[Stockpile] " + message));
+            return new ItemFinder.Reply(404, message);
+        }
+        findHighlight.show(client, matches, config.highlight);
+        var highlighted = matches.stream().filter(c -> dimension.equals(c.dimension())).limit(FindHighlight.LIMIT)
+                .map(InventoryStore.Container::id).collect(java.util.stream.Collectors.toSet());
+        int visible = 0, unloaded = 0, stale = 0, elsewhere = 0;
+        for (var c : matches) {
+            BlockPos pos = FindHighlight.positions(c).getFirst();
+            if (!dimension.equals(c.dimension())) elsewhere++;
+            else if (!client.level.hasChunkAt(pos)) unloaded++;
+            else if (!FindHighlight.present(client, c, pos)) stale++;
+            else if (highlighted.contains(c.id())) visible++;
+        }
+        String message = matches.size() + " remembered container(s). " + Math.min(visible, FindHighlight.LIMIT) + " ready to highlight for " + config.highlight.seconds() + "s" +
+                (unloaded > 0 ? "; " + unloaded + " in unloaded chunks (approach to highlight)" : "") +
+                (elsewhere > 0 ? "; " + elsewhere + " in another dimension" : "") +
+                (stale > 0 ? "; " + stale + " storage block(s) missing; saved contents may be stale" : "") +
+                (matches.size() > FindHighlight.LIMIT ? "; highlighting limited to the nearest " + FindHighlight.LIMIT + " in this dimension" : "") + ".";
+        if (!sendChat) {
+            return new ItemFinder.Reply(200, message + " Return to Minecraft to see the outline.");
+        }
+        client.player.sendSystemMessage(Component.literal("[Stockpile] " + (request.itemId()==null?"Storage location":request.itemId()) + ": " + message));
+        for (var c : matches.stream().limit(10).toList()) {
+            var packedGroups=request.includePacked()?ItemFinder.packedLocations(c,request.itemId()):List.<ItemFinder.PackedLocation>of();
+            String packed=packedGroups.stream().limit(3).map(i->" | "+i.count()+" inside "+String.join(" / ",i.path())).reduce("",String::concat);
+            if(packedGroups.size()>3)packed+=" | +"+(packedGroups.size()-3)+" more packed locations";
+            client.player.sendSystemMessage(Component.literal("[Stockpile] " + c.name() + " · " + c.dimension() + " · " +
+                    c.position().get(0) + " / " + c.position().get(1) + " / " + c.position().get(2) +
+                    (ItemFinder.ender(c) ? " (last Ender Chest access point; any Ender Chest has these contents)" : c.type().endsWith("shulker_box") ? " (placed shulker)" : "") + packed));
+        }
+        if (matches.size() > 10) client.player.sendSystemMessage(Component.literal("[Stockpile] Showing the first 10 locations in chat. Use the dashboard for all locations."));
+        return new ItemFinder.Reply(200, message);
+    }
+    InventoryStore.Container currentChest(int menuId) {
+        var client = Minecraft.getInstance();
+        if (worldId == null || active == null || activeMenu != menuId || client.player == null ||
+                client.player.containerMenu.containerId != menuId) return null;
+        return store.getContainer(worldId, active.id());
+    }
+
+    boolean chestExcluded(int menuId) {
+        var chest = currentChest(menuId);
+        return chest != null && store.excluded(worldId, chest.id());
+    }
+
+    void toggleChestExclusion(int menuId) {
+        var chest = currentChest(menuId);
+        if (chest != null) store.exclude(worldId, chest.id(), !store.excluded(worldId, chest.id()));
+    }
+
+    boolean offerSchematicChest(int menuId) {
+        var server = Minecraft.getInstance().getSingleplayerServer();
+        if (server == null || server.isPublished() || !config.schematicChestEnabled) return false;
+        var candidate = activeMenu == menuId && active != null ? active : pending;
+        return candidate != null && InventoryStore.schematicChestKind(candidate.type());
+    }
+
+    boolean canChooseSchematicChest(int menuId) {
+        var chest = currentChest(menuId);
+        return offerSchematicChest(menuId) && chest != null &&
+                (store.isSchematicChest(worldId, chest.id()) || !store.excluded(worldId, chest.id()));
+    }
+
+    boolean isSchematicChest(int menuId) {
+        var chest = currentChest(menuId);
+        return chest != null && store.isSchematicChest(worldId, chest.id());
+    }
+
+    void toggleSchematicChest(int menuId) {
+        if (!canChooseSchematicChest(menuId)) return;
+        store.toggleSchematicChest(worldId, currentChest(menuId).id());
+    }
+
+    void openStorageMap() {
+        openBrowser("&view=map");
+    }
+
     public void saveConfig() { config.save(configPath, LOGGER); }
     public Component shortcutLabel() {
-        return !config.keybindEnabled ? Component.literal("Disabled") : open.isUnbound() ? Component.literal("Unbound") : open.getTranslatedKeyMessage();
+        return !config.keybindEnabled ? Component.literal("Disabled") : open.isUnbound() ? Component.translatable("stockpile.settings.unbound") : open.getTranslatedKeyMessage();
     }
     public void unbindShortcut() {
         open.setKey(InputConstants.UNKNOWN); KeyMapping.resetMapping(); Minecraft.getInstance().options.save();
@@ -268,7 +515,15 @@ public final class StockpileClient implements ClientModInitializer {
     }
     private boolean ensureDashboard() {
         if (dashboard != null) return true;
-        try { dashboard = new DashboardServer(store); dashboard.registry(registryJson); return true; }
+        try {
+            dashboard = new DashboardServer(store, request -> onClient(() -> performFind(request, false)),
+                    data -> store.shared(data.get("worldId").getAsString()) ? sharedStorage.reserve(data) :
+                            CompletableFuture.completedFuture(store.reservation(data, "local")),
+                    request -> onClient(() -> captureTerrain(request)), this::highlightSettings,
+                    sessionTerrain, this::fillSchematicChest, this::schematicChestSettings);
+            dashboard.registry(registryJson);
+            return true;
+        }
         catch (Exception e) { LOGGER.error("Could not start Stockpile dashboard", e); return false; }
     }
     public void showDashboardLink(boolean respectAutoOpen) {
@@ -284,13 +539,15 @@ public final class StockpileClient implements ClientModInitializer {
         showDashboardLink(false);
         openBrowser();
     }
-    private void openBrowser() {
+    private void openBrowser() { openBrowser(""); }
+
+    private void openBrowser(String fragmentOptions) {
         Minecraft client = Minecraft.getInstance();
         if (!ensureDashboard()) {
             if (client.player != null) client.player.sendSystemMessage(Component.literal("Stockpile could not start its browser dashboard. Check the game log."));
             return;
         }
-        String url = dashboard.url();
+        String url = dashboard.url() + fragmentOptions;
         try {
             String os = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
             if (os.contains("mac")) new ProcessBuilder("open", url).start();

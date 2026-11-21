@@ -1,3 +1,4 @@
+import {validatePlanning} from './planning-state.js';
 export const MAX_COUNT = 2_147_483_647;
 export const CONTAINER_KINDS = ['chest','barrel','shulker','ender'];
 export const STORAGE_KINDS = ['chest','barrel','shulker'];
@@ -52,14 +53,44 @@ export function validateSnapshot(data) {
           return {id:i.id,name:typeof i.name==='string'?i.name.slice(0,150):humanize(i.id),count:count(i.count),maxStack:count(i.maxStack??64),path:i.path.map(s=>s.slice(0,180))};
         });
       }
-      return {id:c.id, name:String(c.name || 'Chest').slice(0,150), type:String(c.type || 'chest'), dimension:c.dimension, position:c.position, lastSeen:Math.max(0, Number(c.lastSeen) || 0), items,...(packedItems?{packedItems,packedScanComplete:c.packedScanComplete!==false}:{})};
+      return {id:c.id,...(Array.isArray(c.members)?{members:c.members.filter(m=>typeof m==='string').slice(0,2)}:{}), name:String(c.name || 'Chest').slice(0,150), type:String(c.type || 'chest'), dimension:c.dimension, position:c.position, lastSeen:Math.max(0, Number(c.lastSeen) || 0), items,...(packedItems?{packedItems,packedScanComplete:c.packedScanComplete!==false}:{})};
     });
-    return {id:world.id, name:String(world.name || world.id).slice(0,150), containers};
+    const preferred = typeof world.schematicChestMark === 'string' && world.schematicChestMark.length <= 80
+      ? {schematicChestMark:world.schematicChestMark, schematicChest:
+        typeof world.schematicChest === 'string' && world.schematicChest.length <= 500 ? world.schematicChest : ''} : {};
+    return {id:world.id, name:String(world.name || world.id).slice(0,150), containers, ...preferred, excludedLocations:Array.isArray(world.excludedLocations)?world.excludedLocations.filter(v=>typeof v==='string'&&v.length<=500).slice(0,40000):[],excludedContainerIds:Array.isArray(world.excludedContainerIds)?world.excludedContainerIds.filter(v=>typeof v==='string'&&v.length<=500).slice(0,20000):[],planning:validatePlanning(world.planning),manualTeam:world.manualTeam===true,shared:world.shared===true,live:world.live===true,authority:typeof world.authority==='string'?world.authority:'',viewer:typeof world.viewer==='string'?world.viewer:'local'};
   });
-  return {schemaVersion:1, capturedAt:Number(data.capturedAt) || 0, connected:!!data.connected, trackingEnabled:data.trackingEnabled!==false, ...(['26.2','26.3'].includes(data.minecraftVersion)?{minecraftVersion:data.minecraftVersion}:{}), worlds};
+  const live={};
+  if(Object.hasOwn(data,'activeWorldId')){
+    if(data.activeWorldId!==null&&(typeof data.activeWorldId!=='string'||!ids.has(data.activeWorldId)))throw new Error('Invalid active world.');
+    live.activeWorldId=data.activeWorldId;
+  }
+  if(validId(data.activeDimension)&&data.activeDimension.length<=256)live.activeDimension=data.activeDimension;
+  if(Number.isSafeInteger(data.terrainRevision)&&data.terrainRevision>=0)live.terrainRevision=data.terrainRevision;
+  if(data.schematicFunnelAvailable===true)live.schematicFunnelAvailable=true;
+  if(typeof data.schematicChestEnabled==='boolean')live.schematicChestEnabled=data.schematicChestEnabled;
+  if(typeof data.schematicChestAutoClear==='boolean')live.schematicChestAutoClear=data.schematicChestAutoClear;
+  if(['offline','client-only','server','operator'].includes(data.teamConnection))live.teamConnection=data.teamConnection;
+  if(Object.hasOwn(data,'worldSession')){
+    if(data.worldSession!==null&&(typeof data.worldSession!=='string'||!data.worldSession||data.worldSession.length>100))throw new Error('Invalid world session.');
+    live.worldSession=data.worldSession;
+  }
+  return {schemaVersion:1, capturedAt:Number(data.capturedAt) || 0, connected:!!data.connected, ...live, trackingEnabled:data.trackingEnabled!==false, ...(['26.2','26.3'].includes(data.minecraftVersion)?{minecraftVersion:data.minecraftVersion}:{}), worlds};
+}
+// Follow new game connections, while keeping intentional archived/team views during the same session.
+export function selectLiveWorld(previous,next,selected){
+  const has=id=>next.worlds.some(w=>w.id===id);
+  const hasLive=Object.hasOwn(next,'activeWorldId');
+  const changed=hasLive&&(previous.activeWorldId!==next.activeWorldId||previous.worldSession!==next.worldSession||previous.connected!==next.connected);
+  if(hasLive&&next.connected){
+    const active=typeof next.activeWorldId==='string'&&has(next.activeWorldId)?next.activeWorldId:'';
+    if(changed||!has(selected)||!active)return {worldId:active,reset:changed||selected!==active};
+  }
+  const worldId=has(selected)?selected:next.worlds[0]?.id||'';
+  return {worldId,reset:changed||selected!==worldId};
 }
 export function aggregate(containers, {includePacked=true}={}) {
-  const result = new Map();
+  const result = new Map(),pathIndexes=new WeakMap();
   for (const c of containers) {
     const locations=new Map();
     for (const [items,packed] of [[c.items,false],[includePacked?(c.packedItems||[]):[],true]])for(const item of items){
@@ -72,7 +103,7 @@ export function aggregate(containers, {includePacked=true}={}) {
         locations.set(item.id,location);row.locations.push(location);
       }
       const location=locations.get(item.id);location.count+=item.count;location[packed?'packedCount':'looseCount']+=item.count;
-      if(packed)location.packedPaths.push({path:item.path,count:item.count});
+      if(packed){const key=JSON.stringify(item.path);let paths=pathIndexes.get(location);if(!paths){paths=new Map();pathIndexes.set(location,paths);}const path=paths.get(key);if(path)path.count+=item.count;else{const group={path:[...item.path],count:item.count};paths.set(key,group);location.packedPaths.push(group);}}
     }
   }
   return result;
@@ -95,6 +126,7 @@ export function compareMaterials(materials, inventory, multiplier = 1) {
 }
 export function csvEscape(value) { return '"' + String(value).replaceAll('"','""') + '"'; }
 export function materialsCsv(rows) {
-  const recipes=rows.some(r=>r.craftable!=null);
-  return [recipes?'Item ID,Item,Required,In storage,Can craft,Missing':'Item ID,Item,Required,Available,Missing', ...rows.map(r => [r.id,r.name || humanize(r.id),r.needed,r.available,...(recipes?[r.craftable||0]:[]),r.missing].map(csvEscape).join(','))].join('\r\n');
+  const recipes=rows.some(r=>r.craftable!=null),reserved=rows.some(r=>r.physical!=null);
+  const header=['Item ID','Item','Required',...(reserved?['Physical stock','Reserved elsewhere','Free stock']:[recipes?'In storage':'Available']),...(recipes?['Can craft']:[]),'Missing'];
+  return [header.join(','),...rows.map(r=>[r.id,r.name||humanize(r.id),r.needed,...(reserved?[r.physical,r.reserved,r.available]:[r.available]),...(recipes?[r.craftable||0]:[]),r.missing].map(csvEscape).join(','))].join('\r\n');
 }
